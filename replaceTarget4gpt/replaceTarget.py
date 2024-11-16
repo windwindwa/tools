@@ -7,7 +7,7 @@ os.chdir("replaceTarget4gpt")
 def replace_brackets(input_string):
     """
     将字符串中的 "\(" 和 "\)" 替换为 "$"，以及 "\[" 和 "\]" 替换为 "$$"。
-    最后将 "$ " 替换为 "$"，以及 " $" 替换为 "$"。
+    最后匹配到 "$ xxxxxx $" 时，将其替换为 "$xxxxxx$"。
     
     :param input_string: 输入的中英文字符串
     :return: 替换后的字符串
@@ -18,9 +18,8 @@ def replace_brackets(input_string):
     replaced_string = re.sub(r'\\\[', r'$$', replaced_string)  # 替换 "\[" 为 "$$"
     replaced_string = re.sub(r'\\\]', r'$$', replaced_string)  # 替换 "\]" 为 "$$"
     
-    # 替换 "$ " 为 "$" 和 " $" 为 "$"
-    replaced_string = re.sub(r'\$ ', r'$', replaced_string)
-    replaced_string = re.sub(r' \$', r'$', replaced_string)
+    # 匹配并替换 "$ xxxxxx $" 为 "$xxxxxx$"
+    replaced_string = re.sub(r'\$\s+(.+?)\s+\$', r'$\1$', replaced_string)
     
     return replaced_string
 
