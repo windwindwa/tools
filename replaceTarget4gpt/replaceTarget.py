@@ -1,8 +1,13 @@
 import re
+import os
+
+print(os.getcwd())
+os.chdir("replaceTarget4gpt")
 
 def replace_brackets(input_string):
     """
     将字符串中的 "\(" 和 "\)" 替换为 "$"，以及 "\[" 和 "\]" 替换为 "$$"。
+    最后将 "$ " 替换为 "$"，以及 " $" 替换为 "$"。
     
     :param input_string: 输入的中英文字符串
     :return: 替换后的字符串
@@ -12,9 +17,14 @@ def replace_brackets(input_string):
     replaced_string = re.sub(r'\\\)', r'$', replaced_string)  # 替换 "\)" 为 "$"
     replaced_string = re.sub(r'\\\[', r'$$', replaced_string)  # 替换 "\[" 为 "$$"
     replaced_string = re.sub(r'\\\]', r'$$', replaced_string)  # 替换 "\]" 为 "$$"
+    
+    # 替换 "$ " 为 "$" 和 " $" 为 "$"
+    replaced_string = re.sub(r'\$ ', r'$', replaced_string)
+    replaced_string = re.sub(r' \$', r'$', replaced_string)
+    
     return replaced_string
 
-def read_from_file(filename="input.txt"):
+def read_from_file(filename="./input.txt"):
     """
     从文件中读取输入字符串。
     
@@ -28,7 +38,7 @@ def read_from_file(filename="input.txt"):
         print(f"文件 '{filename}' 未找到。请确保文件存在并重试。")
         return ""
 
-def write_to_file(output_string, filename="output.txt"):
+def write_to_file(output_string, filename="./output.txt"):
     """
     将输出字符串写入文件。
     
