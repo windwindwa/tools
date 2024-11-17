@@ -184,14 +184,19 @@ if __name__ == "__main__":
     tab.wait(5)
     # 拿到目标结果，提取作者信息
     result = extract_first_gs_ri_names_ids_hrefs(tab.html)
-    print(result)
+    full_result = result  # 初始化 full_result
+    # print(result)
     google_scholar_author_url_prefix = 'https://scholar.google.com'
-    for author in result:
+
+    for author in full_result:  # 遍历 full_result，而不是 result
         author_url = google_scholar_author_url_prefix + author['href']
         tab.get(author_url)
         tab.wait(5)
         profile_info = extract_profile_info(tab.html)
-        print(profile_info)
+        author['profile_info'] = profile_info  # 将 profile_info 添加到 author 字典中
+        # print(profile_info)
+
+    print(full_result)  # 最终包含 profile_info 的结果
     # 下一步应该访问作者的 Google Scholar 页面，获取作者的信息，如果符合条件，就是找到目标了嘛。
 
 
