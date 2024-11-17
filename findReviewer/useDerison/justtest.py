@@ -6,11 +6,164 @@
 # @Software: PyCharm
 
 import json
+import time
 
 from DrissionPage import Chromium
-
+from datetime import datetime
 
 from bs4 import BeautifulSoup
+
+import pandas as pd
+import os
+from captchaHandler import CaptchaHandler
+
+
+def ensure_excel_file_with_headers(file_path, file_name):
+    """
+    检测 Excel 文件是否存在，如果不存在则创建一个包含指定标题的空文件。
+
+    参数:
+        file_path (str): 文件存放的路径。
+        file_name (str): Excel 文件的文件名，可以不包括后缀。
+    """
+    # 定义所需的标题
+    required_columns = ["Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
+
+    # 如果文件名不包括后缀，自动添加 .xlsx
+    if not file_name.endswith('.xlsx'):
+        file_name += '.xlsx'
+
+    # 构建完整的文件路径
+    full_path = os.path.join(file_path, file_name)
+
+    # 检测文件是否存在
+    if not os.path.exists(full_path):
+        # 如果文件不存在，创建一个空的 DataFrame 并保存为 Excel 文件
+        df = pd.DataFrame(columns=required_columns)
+        os.makedirs(file_path, exist_ok=True)  # 确保目录存在
+        df.to_excel(full_path, index=False)
+        print(f"File created: {full_path}")
+    else:
+        # 如果文件存在，检查标题是否正确
+        try:
+            existing_data = pd.read_excel(full_path)
+            if list(existing_data.columns) != required_columns:
+                # 标题不匹配时，覆盖文件以确保标题正确
+                df = pd.DataFrame(columns=required_columns)
+                df.to_excel(full_path, index=False)
+                print(f"File updated with correct headers: {full_path}")
+            else:
+                print(f"File already exists and headers are correct: {full_path}")
+        except Exception as e:
+            # 如果读取文件失败，重新创建文件
+            print(f"Error reading the file. Re-creating: {full_path}. Error: {e}")
+            df = pd.DataFrame(columns=required_columns)
+            df.to_excel(full_path, index=False)
+
+
+def append_to_excel(target_result, file_path, file_name):
+    """
+    将目标列表数据续写到已存在的 Excel 文件中。
+
+    参数:
+        target_result (list): 要追加的数据列表。
+        file_path (str): 文件存放的路径。
+        file_name (str): Excel 文件的文件名，可以不包括后缀。
+    """
+    # 如果文件名没有后缀，自动添加 .xlsx
+    if not file_name.endswith('.xlsx'):
+        file_name += '.xlsx'
+
+    # 构建完整的文件路径
+    full_path = os.path.join(file_path, file_name)
+
+    # 如果文件不存在，则调用 ensure_excel_file_with_headers 创建文件
+    if not os.path.exists(full_path):
+        ensure_excel_file_with_headers(file_path, file_name)
+
+    # 定义标准的列标题
+    required_columns = ["Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
+
+    # 读取现有的 Excel 文件
+    try:
+        existing_data = pd.read_excel(full_path)
+        # 确保列标题一致
+        if list(existing_data.columns) != required_columns:
+            existing_data = pd.DataFrame(columns=required_columns)
+    except Exception as e:
+        # 如果读取失败，重新初始化 DataFrame
+        print(f"Error reading the file. Resetting: {full_path}. Error: {e}")
+        existing_data = pd.DataFrame(columns=required_columns)
+
+    # 准备要追加的新数据
+    new_data = []
+    for item in target_result:
+        name = item.get('profile_info', {}).get('full_name', '')
+        affiliation = item.get('profile_info', {}).get('affiliation', '')
+        choice_reason = item.get('profile_info', {}).get('position', '')
+        href = item.get('href', '')
+        new_data.append({
+            "Name": name,
+            "Affiliation": affiliation,
+            "Email": "",
+            "Choice Reason": choice_reason,
+            "Google Scholar Home Page": href,
+        })
+
+    # 将新数据转换为 DataFrame 并追加到现有数据
+    new_data_df = pd.DataFrame(new_data, columns=required_columns)
+    updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
+
+    # 保存更新后的数据到文件
+    updated_data.to_excel(full_path, index=False)
+    return full_path
+# 筛选函数
+def filter_professors(data):
+    """
+    过滤出满足特定职位条件的人员数据。
+
+    此函数遍历输入的人员数据列表，根据每个人的 `profile_info` 中的 `position` 字段内容，
+    筛选出职位包含 "Assistant Professor" 或 "Associate Professor"（大小写不敏感匹配）的人，
+    并将这些人员的数据保存在新的列表中返回。
+
+    参数:
+        data (list): 一个包含人员数据的列表，每个元素是一个字典，
+                     必须包含 `profile_info` 键，且其值是一个字典，
+                     包含 `position` 键描述职位信息。
+
+    返回:
+        list: 一个包含符合条件的人员数据的新列表，保留原数据结构。
+
+    示例:
+        输入:
+            data = [
+                {'name': 'T Sharma', 'profile_info': {'position': 'Assistant Professor, Penn State University'}},
+                {'name': 'Y Potter', 'profile_info': {'position': 'UC Berkeley'}},
+                {'name': 'K Pongmala', 'profile_info': {'position': 'Associate Professor, UC Berkeley'}}
+            ]
+        调用:
+            result = filter_professors(data)
+        输出:
+            [
+                {'name': 'T Sharma', 'profile_info': {'position': 'Assistant Professor, Penn State University'}},
+                {'name': 'K Pongmala', 'profile_info': {'position': 'Associate Professor, UC Berkeley'}}
+            ]
+    """
+    filtered_list = []
+    for item in data:
+        # 安全获取每个人的 profile_info 信息
+        profile_info = item.get('profile_info', {})
+
+        # 安全获取职位信息并转换为小写以支持大小写不敏感匹配
+        position = profile_info.get('position', '').lower()
+
+        # 检查职位中是否包含目标关键词
+        if 'assistant professor' in position or 'associate professor' in position:
+            # 如果匹配成功，将整个数据项添加到结果列表中
+            filtered_list.append(item)
+
+    # 返回筛选后的列表
+    return filtered_list
 
 
 def extract_profile_info(html_str):
@@ -30,7 +183,6 @@ def extract_profile_info(html_str):
             - keywords: 包含关键字及其链接的列表，每个关键字为字典，格式如下：
                 {"name": 关键字, "href": 关键字链接}
     """
-    from bs4 import BeautifulSoup
 
     # 使用BeautifulSoup解析HTML
     soup = BeautifulSoup(html_str, 'html.parser')
@@ -175,29 +327,51 @@ def scholar_search(tab, query: str):
 
 
 if __name__ == "__main__":
-    from DrissionPage import Chromium
+    # 所有操作都在latest_tab上进行
+
+
+    # 获取当前日期和时间
+    current_time = datetime.now()
+    file_path = os.getcwd()
+    file_name = "output_" + str(current_time) + ".xlsx"
 
     chromium = Chromium()
+    # 验证码处理器
+    captcha_handler = CaptchaHandler(chromium)
+    # 调用 handle_captcha 方法
+
     tab = chromium.latest_tab
     tab.get('https://scholar.google.com/scholar?hl=zh-CN')
-    tab = scholar_search(tab, "T. Sharma, Y. Kwon, K. Pongmala, H. Wang, A. Miller, D. Song, and Y. Wang, “Unpacking how decentralized autonomous organizations (daos) work in practice,” arXiv preprint arXiv:2304.09822, 2023.")
-    tab.wait(5)
-    # 拿到目标结果，提取作者信息
-    result = extract_first_gs_ri_names_ids_hrefs(tab.html)
-    full_result = result  # 初始化 full_result
-    # print(result)
-    google_scholar_author_url_prefix = 'https://scholar.google.com'
+    # 在每一个获取页面后，调用 handle_captcha 方法
+    captcha_handler.handle_captcha()
 
-    for author in full_result:  # 遍历 full_result，而不是 result
-        author_url = google_scholar_author_url_prefix + author['href']
-        tab.get(author_url)
+    #todo: 接下来的任务是变为从文件中读取引用列表， 计划包含三个文件，作者txt，引用txt，关键词txt，一行一个。使用chatgpt完成数据读取，然后手动写入的这些txt中。
+    # 但我目前想，只需要一个引用txt就可以了，是否需要自动处理关键词和作者，待定。我想的是作者手动处理，然后引用不够，必须使用关键词，也是手动处理。这样就可以了。反正找email也必须手动处理。
+    # 我有考虑是否使用steamlit写一个web页面，然后做个交互，不过如果只是我自己使用的话，我想无所谓了。
+    citations = ["T. Sharma, Y. Kwon, K. Pongmala, H. Wang, A. Miller, D. Song, and Y. Wang, “Unpacking how decentralized autonomous organizations (daos) work in practice,” arXiv preprint arXiv:2304.09822, 2023."] # 初始化 citations 引用列表
+
+    for citation in citations:
+        tab = scholar_search(tab,citation )
         tab.wait(5)
-        profile_info = extract_profile_info(tab.html)
-        author['profile_info'] = profile_info  # 将 profile_info 添加到 author 字典中
-        # print(profile_info)
+        # 拿到目标结果，提取作者信息
+        result = extract_first_gs_ri_names_ids_hrefs(tab.html)
+        full_result = result  # 初始化 full_result
+        # print(result)
+        google_scholar_author_url_prefix = 'https://scholar.google.com'
 
-    print(full_result)  # 最终包含 profile_info 的结果
-    # 下一步应该访问作者的 Google Scholar 页面，获取作者的信息，如果符合条件，就是找到目标了嘛。
+        for author in full_result:  # 遍历 full_result，而不是 result
+            author_url = google_scholar_author_url_prefix + author['href']
+            author['href'] = author_url
+            tab.get(author_url)
+            captcha_handler.handle_captcha()
+            tab.wait(5)
+            profile_info = extract_profile_info(tab.html)
+            author['profile_info'] = profile_info  # 将 profile_info 添加到 author 字典中
+            # print(profile_info)
 
+        # print(full_result)  # 最终包含 profile_info 的结果
+        # 下一步应该访问作者的 Google Scholar 页面，获取作者的信息，如果符合条件，就是找到目标了嘛。
 
+        target_authors = filter_professors(full_result)
+        append_to_excel(target_authors, file_path, file_name)
 
