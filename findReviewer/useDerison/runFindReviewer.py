@@ -8,6 +8,8 @@
 import json
 import sys
 import argparse
+import time
+
 from DrissionPage import Chromium
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -378,6 +380,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
     # 打印程序 Logo
     print_logo()
     print(">>> 欢迎使用 Google Scholar 引用和作者信息提取程序！")
+    time.sleep(sleep_time)
 
     print(">>> 初始化程序...")
     # 初始化数据库
@@ -493,6 +496,8 @@ if __name__ == "__main__":
     else:
         # 如果没有提供 citations_file，显示帮助信息并退出
         print("Error: --citations_file (-c) is required.")
+        print("------------------------------------------\n")
+
         parser.print_help()
         sys.exit(1)
 
