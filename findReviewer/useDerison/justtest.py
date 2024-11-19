@@ -6,16 +6,14 @@
 # @Software: PyCharm
 
 import json
-import time
-
+import argparse
 from DrissionPage import Chromium
 from datetime import datetime
-
 from bs4 import BeautifulSoup
-
 import pandas as pd
 import os
-from findReviewer.useDerison.captchaHandler import CaptchaHandler
+from captchaHandler import CaptchaHandler
+from citaionHandler import clean_references
 
 def read_references(file_path):
     """
@@ -345,53 +343,121 @@ def scholar_search(tab, query: str):
     return tab
 
 
-if __name__ == "__main__":
-    # 所有操作都在latest_tab上进行
+def main(citations_file, output_path=None, output_file=None, sleep_time=5):
+    """
+    主函数：从引用文件中读取引用列表，使用 Google Scholar 进行搜索，提取作者信息并保存到 Excel 文件。
 
+    参数：
+        citations_file (str): 引用文件路径，文件中每行包含一个引用。
+        output_path (str): 输出目录路径，默认是当前工作目录。
+        output_file (str): 输出 Excel 文件名，默认格式为 output_<时间戳>.xlsx。
+        sleep_time (int): 每次请求之间的等待时间（单位：秒），默认值为 5 秒。
+
+    流程：
+    1. 初始化 Chromium 和验证码处理器。
+    2. 加载引用文件并逐条处理。
+    3. 在 Google Scholar 中搜索引用，提取作者信息。
+    4. 根据条件筛选目标作者并保存到 Excel 文件。
+    """
+    print(">>> 初始化程序...")
 
     # 获取当前日期和时间
     current_time = datetime.now()
-    file_path = os.getcwd()
-    file_name = "output_" + str(current_time) + ".xlsx"
+    file_path = output_path or os.getcwd()
+    file_name = output_file or f"output_{current_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
+    print(f"当前时间: {current_time}, 文件将保存为: {file_name}")
 
+    # 初始化 Chromium 和验证码处理器
+    print(">>> 初始化 Chromium 和验证码处理器...")
     chromium = Chromium()
-    # 验证码处理器
     captcha_handler = CaptchaHandler(chromium)
-    # 调用 handle_captcha 方法
 
-    tab = chromium.latest_tab
-    tab.get('https://scholar.google.com/scholar?hl=zh-CN')
-    # 在每一个获取页面后，调用 handle_captcha 方法
-    captcha_handler.handle_captcha()
+    # 清理引用文件
+    print(f">>> 清理引用文件: {citations_file}")
+    clean_references(citations_file)
 
-    # 接下来的任务是变为从文件中读取引用列表， 计划包含三个文件，作者txt，引用txt，关键词txt，一行一个。使用chatgpt完成数据读取，然后手动写入的这些txt中。
-    # 我有考虑是否使用steamlit写一个web页面，然后做个交互，不过如果只是我自己使用的话，我想无所谓了。
+    # 读取引用文件
+    print(f">>> 从引用文件 {citations_file} 中加载引用列表...")
+    citations = read_references(citations_file)
+    print(f"共加载 {len(citations)} 条引用。")
 
-    #但我目前想，只需要一个引用txt就可以了，是否需要自动处理关键词和作者，待定。我想的是作者手动处理，然后引用不够，必须使用关键词，也是手动处理。这样就可以了。反正找email也必须手动处理。
+    # 遍历引用并处理
+    for idx, citation in enumerate(citations, start=1):
+        print(f">>> 处理第 {idx} 条引用: {citation}")
 
-    citations = read_references('citations.txt')
-    for citation in citations:
-        tab = scholar_search(tab,citation )
-        tab.wait(5)
-        # 拿到目标结果，提取作者信息
+        # 打开 Google Scholar 并处理验证码
+        print(">>> 打开 Google Scholar 并处理验证码...")
+        tab = chromium.latest_tab
+        tab.get('https://scholar.google.com/scholar?hl=zh-CN')
+        captcha_handler.handle_captcha()
+
+        # Google Scholar 搜索
+        print(">>> 在 Google Scholar 中搜索引用...")
+        tab = scholar_search(tab, citation)
+        tab.wait(sleep_time)
+
+        # 提取作者和引用信息
+        print(">>> 提取搜索结果中的作者和引用信息...")
         result = extract_first_gs_ri_names_ids_hrefs(tab.html)
-        full_result = result  # 初始化 full_result
-        # print(result)
+        full_result = result
+
         google_scholar_author_url_prefix = 'https://scholar.google.com'
 
-        for author in full_result:  # 遍历 full_result，而不是 result
+        # 访问作者页面并提取信息
+        for author_idx, author in enumerate(full_result, start=1):
+            print(f">>> 访问第 {author_idx} 位作者页面: {author['href']}")
             author_url = google_scholar_author_url_prefix + author['href']
             author['href'] = author_url
             tab.get(author_url)
             captcha_handler.handle_captcha()
-            tab.wait(5)
+            tab.wait(sleep_time)
+
+            print(f">>> 提取作者信息...")
             profile_info = extract_profile_info(tab.html)
-            author['profile_info'] = profile_info  # 将 profile_info 添加到 author 字典中
-            # print(profile_info)
+            author['profile_info'] = profile_info
 
-        # print(full_result)  # 最终包含 profile_info 的结果
-        # 下一步应该访问作者的 Google Scholar 页面，获取作者的信息，如果符合条件，就是找到目标了嘛。
-
+        # 筛选目标作者
+        print(">>> 筛选符合条件的作者...")
         target_authors = filter_professors(full_result)
+
+        # 保存到 Excel 文件
+        print(f">>> 将结果保存到 Excel 文件: {file_name}")
         append_to_excel(target_authors, file_path, file_name)
 
+    print(">>> 所有引用处理完成，程序结束！")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Google Scholar Citation and Author Extraction")
+    parser.add_argument(
+        '--citations_file', '-c',
+        type=str,
+        help="Path to the citations text file containing one citation per line."
+    )
+    parser.add_argument(
+        '--output_path', '-o',
+        type=str,
+        help="Path to the output directory (default: current working directory)."
+    )
+    parser.add_argument(
+        '--output_file', '-f',
+        type=str,
+        help="Name of the output Excel file (default: output_<current_time>.xlsx)."
+    )
+    parser.add_argument(
+        '--sleep_time', '-s',
+        type=int,
+        default=5,
+        help="Sleep time in seconds between requests (default: 5 seconds)."
+    )
+    args = parser.parse_args()
+
+    if args.citations_file:
+        # 如果命令行传递参数，使用参数运行
+        main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
+    else:
+        # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
+        print("未检测到命令行参数，使用默认设置运行...")
+        default_citations_file = "citations.txt"  # 默认引用文件路径
+        default_output_path = os.getcwd()        # 默认输出路径
+        main(default_citations_file, default_output_path)
