@@ -20,6 +20,7 @@ def initialize_database(db_file=DB_FILE):
     """
     Ensure the SQLite database file exists and the required table is created.
     """
+    print(f"Initializing database at {os.path.abspath(db_file)} with table {TABLE_NAME}.")
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 

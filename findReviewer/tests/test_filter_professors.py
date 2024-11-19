@@ -9,7 +9,7 @@
 import pytest
 
 # 被测试的函数
-from findReviewer.useDerison.justtest import filter_professors
+from findReviewer.useDerison.runFindReviewer import filter_professors
 
 # 测试函数
 def test_filter_professors():

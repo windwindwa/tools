@@ -8,7 +8,7 @@
 # @Software: PyCharm
 import pytest
 from bs4 import BeautifulSoup
-from findReviewer.useDerison.justtest import extract_first_gs_ri_names_ids_hrefs  # 替换为实际的模块名
+from findReviewer.useDerison.runFindReviewer import extract_first_gs_ri_names_ids_hrefs  # 替换为实际的模块名
 
 def test_extract_first_gs_ri_names_ids_hrefs():
     # 示例HTML输入

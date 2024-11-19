@@ -10,7 +10,7 @@ import pytest
 import os
 import pandas as pd
 from tempfile import NamedTemporaryFile
-from findReviewer.useDerison.justtest import append_to_excel
+from findReviewer.useDerison.runFindReviewer import append_to_excel
 import pytest
 import os
 import pandas as pd

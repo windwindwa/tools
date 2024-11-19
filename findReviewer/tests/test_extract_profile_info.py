@@ -1,6 +1,6 @@
 import pytest
 from bs4 import BeautifulSoup
-from findReviewer.useDerison.justtest import extract_profile_info  # 替换为实际模块名
+from findReviewer.useDerison.runFindReviewer import extract_profile_info  # 替换为实际模块名
 
 
 @pytest.mark.parametrize("html_str, expected", [

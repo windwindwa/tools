@@ -7,7 +7,7 @@
 # @File    : test_read_references.py
 # @Software: PyCharm
 import pytest
-from findReviewer.useDerison.justtest import read_references
+from findReviewer.useDerison.runFindReviewer import read_references
 @pytest.fixture
 def create_sample_file(tmp_path):
     """

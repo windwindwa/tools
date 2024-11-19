@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import json
+import sys
 import argparse
 from DrissionPage import Chromium
 from datetime import datetime
@@ -453,7 +454,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
         # 保存到 Excel 文件
         print(f">>> 将结果保存到 Excel 文件: {file_name}")
         append_to_excel(target_authors, file_path, file_name)
-
+    print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
 
@@ -480,14 +481,29 @@ if __name__ == "__main__":
         default=5,
         help="Sleep time in seconds between requests (default: 5 seconds)."
     )
+    # 如果没有传入参数，显示帮助并退出
     args = parser.parse_args()
+    if not any(vars(args).values()):  # 检查是否传入了任何参数
+        parser.print_help()
+        sys.exit(1)
 
+    # 如果传递了参数，则运行主逻辑
     if args.citations_file:
-        # 如果命令行传递参数，使用参数运行
         main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
     else:
-        # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
-        print("未检测到命令行参数，使用默认设置运行...")
-        default_citations_file = "citations.txt"  # 默认引用文件路径
-        default_output_path = os.getcwd()        # 默认输出路径
-        main(default_citations_file, default_output_path)
+        # 如果没有提供 citations_file，显示帮助信息并退出
+        print("Error: --citations_file (-c) is required.")
+        parser.print_help()
+        sys.exit(1)
+
+    # args = parser.parse_args()
+    #
+    # if args.citations_file:
+    #     # 如果命令行传递参数，使用参数运行
+    #     main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
+    # else:
+    #     # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
+    #     print("未检测到命令行参数，使用默认设置运行...")
+    #     default_citations_file = "citations.txt"  # 默认引用文件路径
+    #     default_output_path = os.getcwd()        # 默认输出路径
+    #     main(default_citations_file, default_output_path)
