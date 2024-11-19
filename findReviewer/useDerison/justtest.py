@@ -14,6 +14,17 @@ import pandas as pd
 import os
 from captchaHandler import CaptchaHandler
 from citaionHandler import clean_references
+from databaseHandler import initialize_database, insert_data,fetch_scholar_data
+from pyfiglet import figlet_format
+
+def print_logo():
+    """
+    打印程序的 Logo
+    """
+    print("--------------------\n")
+    print(figlet_format("L Z G", font="doh"))
+    print("--------------------\n")
+
 
 def read_references(file_path):
     """
@@ -194,6 +205,7 @@ def extract_profile_info(html_str):
         dict: 包含以下信息的字典：
             - full_name: 全名
             - position: 职位
+            - googlescholar_id: Google Scholar ID
             - affiliation: 隶属单位（文字）
             - affiliation_link: 隶属单位的链接（如果存在）
             - homepage: 首页链接及文字（如果存在），格式为 {"href": 链接, "text": "首页"}
@@ -208,6 +220,7 @@ def extract_profile_info(html_str):
     profile_info = {
         "full_name": None,
         "position": None,
+        "googlescholar_id": None,
         "affiliation": None,
         "affiliation_link": None,
         "homepage": None,
@@ -218,6 +231,8 @@ def extract_profile_info(html_str):
     full_name_div = soup.find("div", id="gsc_prf_in")
     if full_name_div:
         profile_info["full_name"] = full_name_div.text.strip()
+
+
 
     # 提取职位
     position_div = soup.find("div", class_="gsc_prf_il")
@@ -359,8 +374,14 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
     3. 在 Google Scholar 中搜索引用，提取作者信息。
     4. 根据条件筛选目标作者并保存到 Excel 文件。
     """
-    print(">>> 初始化程序...")
+    # 打印程序 Logo
+    print_logo()
+    print(">>> 欢迎使用 Google Scholar 引用和作者信息提取程序！")
 
+    print(">>> 初始化程序...")
+    # 初始化数据库
+    print(">>> 初始化数据库...")
+    initialize_database()
     # 获取当前日期和时间
     current_time = datetime.now()
     file_path = output_path or os.getcwd()
@@ -384,7 +405,6 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
     # 遍历引用并处理
     for idx, citation in enumerate(citations, start=1):
         print(f">>> 处理第 {idx} 条引用: {citation}")
-
         # 打开 Google Scholar 并处理验证码
         print(">>> 打开 Google Scholar 并处理验证码...")
         tab = chromium.latest_tab
@@ -404,18 +424,28 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
         google_scholar_author_url_prefix = 'https://scholar.google.com'
 
         # 访问作者页面并提取信息
-        for author_idx, author in enumerate(full_result, start=1):
-            print(f">>> 访问第 {author_idx} 位作者页面: {author['href']}")
-            author_url = google_scholar_author_url_prefix + author['href']
-            author['href'] = author_url
-            tab.get(author_url)
-            captcha_handler.handle_captcha()
-            tab.wait(sleep_time)
+        for author_idx, author in enumerate(result, start=1):
 
-            print(f">>> 提取作者信息...")
-            profile_info = extract_profile_info(tab.html)
-            author['profile_info'] = profile_info
+            print(f">>> 检索现有数据库 googlescholar id: {author['googlescholar_id']}...")
 
+            author_info_from_database = fetch_scholar_data(author['googlescholar_id'])
+            if author_info_from_database['googlescholar_id'] == author['googlescholar_id']:
+                print(f">>> 从数据库中提取到作者信息...")
+                full_result[author_idx - 1]['profile_info'] = author_info_from_database
+                continue
+            else:
+                print(f">>> 未在数据库中找到作者信息，继续提取...")
+                print(f">>> 访问第 {author_idx} 位作者页面: {author['href']}")
+                author_url = google_scholar_author_url_prefix + author['href']
+                author['href'] = author_url
+                tab.get(author_url)
+                captcha_handler.handle_captcha()
+                tab.wait(sleep_time)
+                print(f">>> 提取作者信息...")
+                profile_info = extract_profile_info(tab.html)
+                full_result[author_idx-1]['profile_info'] = profile_info
+                print(f">>> 将作者信息插入数据库中...")
+                insert_data(full_result[author_idx-1])
         # 筛选目标作者
         print(">>> 筛选符合条件的作者...")
         target_authors = filter_professors(full_result)
