@@ -15,7 +15,26 @@ from bs4 import BeautifulSoup
 
 import pandas as pd
 import os
-from captchaHandler import CaptchaHandler
+from findReviewer.useDerison.captchaHandler import CaptchaHandler
+
+def read_references(file_path):
+    """
+    读取文件中的每行内容，并将其存储为列表返回。
+
+    :param file_path: str, 文件路径
+    :return: list, 每行作为一个列表元素
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            references = [line.strip() for line in file if line.strip()]
+        return references
+    except FileNotFoundError:
+        print(f"错误: 文件 '{os.path.abspath(file_path)}' 未找到！")
+        return []
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return []
+
 
 
 def ensure_excel_file_with_headers(file_path, file_name):
@@ -345,11 +364,12 @@ if __name__ == "__main__":
     # 在每一个获取页面后，调用 handle_captcha 方法
     captcha_handler.handle_captcha()
 
-    #todo: 接下来的任务是变为从文件中读取引用列表， 计划包含三个文件，作者txt，引用txt，关键词txt，一行一个。使用chatgpt完成数据读取，然后手动写入的这些txt中。
-    # 但我目前想，只需要一个引用txt就可以了，是否需要自动处理关键词和作者，待定。我想的是作者手动处理，然后引用不够，必须使用关键词，也是手动处理。这样就可以了。反正找email也必须手动处理。
+    # 接下来的任务是变为从文件中读取引用列表， 计划包含三个文件，作者txt，引用txt，关键词txt，一行一个。使用chatgpt完成数据读取，然后手动写入的这些txt中。
     # 我有考虑是否使用steamlit写一个web页面，然后做个交互，不过如果只是我自己使用的话，我想无所谓了。
-    citations = ["T. Sharma, Y. Kwon, K. Pongmala, H. Wang, A. Miller, D. Song, and Y. Wang, “Unpacking how decentralized autonomous organizations (daos) work in practice,” arXiv preprint arXiv:2304.09822, 2023."] # 初始化 citations 引用列表
 
+    #但我目前想，只需要一个引用txt就可以了，是否需要自动处理关键词和作者，待定。我想的是作者手动处理，然后引用不够，必须使用关键词，也是手动处理。这样就可以了。反正找email也必须手动处理。
+
+    citations = read_references('citations.txt')
     for citation in citations:
         tab = scholar_search(tab,citation )
         tab.wait(5)
