@@ -2,6 +2,9 @@ import re
 
 
 def process_file(input_file, output_file):
+    """
+    从输入文件中读取内容，去掉所有换行符，并在每个 "[数字]" 前面添加换行符，然后写入到输出文件中。
+    """
     with open(input_file, 'r', encoding='utf-8') as file:
         content = file.read()
 
