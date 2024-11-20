@@ -361,7 +361,7 @@ def scholar_search(tab, query: str):
     return tab
 
 
-def main(citations_file, output_path=None, output_file=None, sleep_time=5):
+def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_reviewers=12):
     """
     主函数：从引用文件中读取引用列表，使用 Google Scholar 进行搜索，提取作者信息并保存到 Excel 文件。
 
@@ -370,6 +370,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
         output_path (str): 输出目录路径，默认是当前工作目录。
         output_file (str): 输出 Excel 文件名，默认格式为 output_<时间戳>.xlsx。
         sleep_time (int): 每次请求之间的等待时间（单位：秒），默认值为 5 秒。
+        max_reviewers (int): 从这个列表中找最大审稿人数，默认为 12。
 
     流程：
     1. 初始化 Chromium 和验证码处理器。
@@ -457,6 +458,12 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5):
         # 保存到 Excel 文件
         print(f">>> 将结果保存到 Excel 文件: {file_name}")
         append_to_excel(target_authors, file_path, file_name)
+        if max_reviewers == 0:
+            print(f"当前查看到第 {idx} 条引用，程序结束！")
+            print(f"已经找到{len(target_authors)} 位符合条件的作者，程序结束！")
+            print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
+            print(">>> 目标人数达到，处理完成，程序结束！")
+            break
     print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
@@ -483,6 +490,11 @@ if __name__ == "__main__":
         type=int,
         default=5,
         help="Sleep time in seconds between requests (default: 5 seconds)."
+    )
+    parser.add_argument(
+        '--max_reviewers', '-m',
+        type=int,
+        help="set the max reviewers to find (default: 12)."
     )
     # 如果没有传入参数，显示帮助并退出
     args = parser.parse_args()
