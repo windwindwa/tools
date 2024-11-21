@@ -20,6 +20,39 @@ from citaionHandler import clean_references
 from databaseHandler import initialize_database, insert_data,fetch_scholar_data
 from pyfiglet import figlet_format
 
+
+def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
+    """
+    从目标 Excel 文件中读取 `Name` 列的所有数据并去重。
+
+    参数:
+        file_path (str): 文件夹路径。
+        file_name (str): 文件名（包括扩展名）。
+        sheet_name (int or str): 要读取的工作表名或索引，默认为第一个工作表。
+
+    返回:
+        list: 去重后的 Name 列数据列表。
+    """
+    try:
+        # 合并文件路径
+        full_path = os.path.join(file_path, file_name)
+
+        # 读取 Excel 文件
+        df = pd.read_excel(full_path, sheet_name=sheet_name)
+
+        # 检查是否存在 `Name` 列
+        if 'Name' not in df.columns:
+            raise ValueError("Excel 文件中未找到 `Name` 列。")
+
+        # 获取 `Name` 列并去重
+        unique_names = df['Name'].dropna().unique()
+
+        # 转为列表返回
+        return unique_names.tolist()
+    except Exception as e:
+        print(f"读取 Excel 文件时发生错误: {e}")
+        return []
+
 def print_logo():
     """
     打印程序的 Logo
@@ -452,20 +485,28 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
                 print(f">>> 将作者信息插入数据库中...")
                 insert_data(full_result[author_idx-1])
         # 筛选目标作者
+
         print(">>> 筛选符合条件的作者...")
         target_authors = filter_professors(full_result)
-
-        # 保存到 Excel 文件
-        print(f">>> 将结果保存到 Excel 文件: {file_name}")
-        append_to_excel(target_authors, file_path, file_name)
-        if max_reviewers == 0:
-            print(f"当前查看到第 {idx} 条引用，程序结束！")
-            print(f"已经找到{len(target_authors)} 位符合条件的作者，程序结束！")
-            print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
-            print(">>> 目标人数达到，处理完成，程序结束！")
-            break
-        else:
-            max_reviewers -= 1
+        if len(target_authors) != 0:
+            print(f"找到符合的作者，执行去重操作...")
+            current_excel_names = read_unique_names_from_excel(file_path, file_name)
+            for target_author in target_authors:
+                if target_author['name'] in current_excel_names:
+                    print(f"发现重复作者: {target_author['name']}，跳过...")
+                    target_authors.remove(target_author)
+            print(f"")
+            # 保存到 Excel 文件
+            print(f">>> 将结果保存到 Excel 文件: {file_name}")
+            append_to_excel(target_authors, file_path, file_name)
+            if max_reviewers == 0:
+                print(f"当前查看到第 {idx} 条引用，程序结束！")
+                print(f"已经找到{len(target_authors)} 位符合条件的作者，程序结束！")
+                print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
+                print(">>> 目标人数达到，处理完成，程序结束！")
+                break
+            else:
+                max_reviewers -= 1
     print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
