@@ -414,12 +414,12 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
         print(">>> 打开 Google Scholar 并处理验证码...")
         tab = chromium.latest_tab
         tab.get('https://scholar.google.com/scholar?hl=zh-CN')
-        captcha_handler.handle_captcha()
 
         # Google Scholar 搜索
         print(">>> 在 Google Scholar 中搜索引用...")
         tab = scholar_search(tab, citation)
         tab.wait(sleep_time)
+        captcha_handler.handle_captcha()
 
         # 提取作者和引用信息
         print(">>> 提取搜索结果中的作者和引用信息...")
