@@ -27,13 +27,17 @@ def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
 
     参数:
         file_path (str): 文件夹路径。
-        file_name (str): 文件名（包括扩展名）。
+        file_name (str): 文件名。
         sheet_name (int or str): 要读取的工作表名或索引，默认为第一个工作表。
 
     返回:
         list: 去重后的 Name 列数据列表。
     """
     try:
+        # 如果文件名没有后缀，自动添加 .xlsx
+        if not file_name.endswith('.xlsx'):
+            file_name += '.xlsx'
+
         # 合并文件路径
         full_path = os.path.join(file_path, file_name)
 
@@ -187,7 +191,7 @@ def filter_professors(data):
     过滤出满足特定职位条件的人员数据。
 
     此函数遍历输入的人员数据列表，根据每个人的 `profile_info` 中的 `position` 字段内容，
-    筛选出职位包含 "Assistant Professor" 或 "Associate Professor"（大小写不敏感匹配）的人，
+    筛选出职位包含 "Assistant Professor" 或 "Associate Professor" 或"Postdoctoral"（大小写不敏感匹配）的人，
     并将这些人员的数据保存在新的列表中返回。
 
     参数:
@@ -222,7 +226,7 @@ def filter_professors(data):
         position = profile_info.get('position', '').lower()
 
         # 检查职位中是否包含目标关键词
-        if 'assistant professor' in position or 'associate professor' in position:
+        if 'assistant professor' in position or 'associate professor'  in position or 'postdoctoral' in position:
             # 如果匹配成功，将整个数据项添加到结果列表中
             filtered_list.append(item)
 
@@ -394,7 +398,7 @@ def scholar_search(tab, query: str):
     return tab
 
 
-def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_reviewers=12):
+def main(citations_file, output_path=None, output_file=None, sleep_time=500, max_reviewers=12):
     """
     主函数：从引用文件中读取引用列表，使用 Google Scholar 进行搜索，提取作者信息并保存到 Excel 文件。
 
@@ -402,7 +406,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
         citations_file (str): 引用文件路径，文件中每行包含一个引用。
         output_path (str): 输出目录路径，默认是当前工作目录。
         output_file (str): 输出 Excel 文件名，默认格式为 output_<时间戳>.xlsx。
-        sleep_time (int): 每次请求之间的等待时间（单位：秒），默认值为 5 秒。
+        sleep_time (int): 每次请求之间的等待时间（单位：毫秒秒），默认值为 500 毫秒 （0.5s）。
         max_reviewers (int): 从这个列表中找最大审稿人数，默认为 12。
 
     流程：
@@ -414,7 +418,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
     # 打印程序 Logo
     print_logo()
     print(">>> 欢迎使用 Google Scholar 引用和作者信息提取程序！")
-    time.sleep(sleep_time)
+    time.sleep(3)
 
     print(">>> 初始化程序...")
     # 初始化数据库
@@ -424,11 +428,13 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
     current_time = datetime.now()
     file_path = output_path or os.getcwd()
     file_name = output_file or f"output_{current_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
-    print(f"当前时间: {current_time}, 文件将保存为: {file_name}")
+    print(f"当前时间: {current_time}, 新建excel文件在: {file_path}/{file_name}")
+    ensure_excel_file_with_headers(output_path, output_file)
 
     # 初始化 Chromium 和验证码处理器
     print(">>> 初始化 Chromium 和验证码处理器...")
     chromium = Chromium()
+    print(chromium)
     captcha_handler = CaptchaHandler(chromium)
 
     # 清理引用文件
@@ -447,11 +453,11 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
         print(">>> 打开 Google Scholar 并处理验证码...")
         tab = chromium.latest_tab
         tab.get('https://scholar.google.com/scholar?hl=zh-CN')
-
+        # time.sleep(sleep_time)
         # Google Scholar 搜索
         print(">>> 在 Google Scholar 中搜索引用...")
         tab = scholar_search(tab, citation)
-        tab.wait(sleep_time)
+        # tab.wait(sleep_time)
         captcha_handler.handle_captcha()
 
         # 提取作者和引用信息
@@ -478,7 +484,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
                 author['href'] = author_url
                 tab.get(author_url)
                 captcha_handler.handle_captcha()
-                tab.wait(sleep_time)
+                tab.wait(sleep_time/1000)
                 print(f">>> 提取作者信息...")
                 profile_info = extract_profile_info(tab.html)
                 full_result[author_idx-1]['profile_info'] = profile_info
@@ -488,20 +494,21 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
 
         print(">>> 筛选符合条件的作者...")
         target_authors = filter_professors(full_result)
+        field_target_authors = target_authors
         if len(target_authors) != 0:
             print(f"找到符合的作者，执行去重操作...")
             current_excel_names = read_unique_names_from_excel(file_path, file_name)
             for target_author in target_authors:
                 if target_author['name'] in current_excel_names:
                     print(f"发现重复作者: {target_author['name']}，跳过...")
-                    target_authors.remove(target_author)
-            print(f"")
+                    field_target_authors.remove(target_author)
+
             # 保存到 Excel 文件
             print(f">>> 将结果保存到 Excel 文件: {file_name}")
-            append_to_excel(target_authors, file_path, file_name)
+            append_to_excel(field_target_authors, file_path, file_name)
             if max_reviewers == 0:
                 print(f"当前查看到第 {idx} 条引用，程序结束！")
-                print(f"已经找到{len(target_authors)} 位符合条件的作者，程序结束！")
+                print(f"已经找到{len(field_target_authors)} 位符合条件的作者，程序结束！")
                 print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
                 print(">>> 目标人数达到，处理完成，程序结束！")
                 break
@@ -531,8 +538,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--sleep_time', '-s',
         type=int,
-        default=5,
-        help="Sleep time in seconds between requests (default: 5 seconds)."
+        default=500,
+        help="Sleep time in milliseconds seconds between requests (default: 500 milliseconds seconds （0.5s))."
     )
     parser.add_argument(
         '--max_reviewers', '-m',
@@ -540,30 +547,30 @@ if __name__ == "__main__":
         help="set the max reviewers to find (default: 12)."
     )
     # 如果没有传入参数，显示帮助并退出
-    args = parser.parse_args()
-    if not any(vars(args).values()):  # 检查是否传入了任何参数
-        parser.print_help()
-        sys.exit(1)
-
-    # 如果传递了参数，则运行主逻辑
-    if args.citations_file:
-        main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
-    else:
-        # 如果没有提供 citations_file，显示帮助信息并退出
-        print("Error: --citations_file (-c) is required.")
-        print("------------------------------------------\n")
-
-        parser.print_help()
-        sys.exit(1)
-
     # args = parser.parse_args()
+    # if not any(vars(args).values()):  # 检查是否传入了任何参数
+    #     parser.print_help()
+    #     sys.exit(1)
     #
+    # # 如果传递了参数，则运行主逻辑
     # if args.citations_file:
-    #     # 如果命令行传递参数，使用参数运行
     #     main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
     # else:
-    #     # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
-    #     print("未检测到命令行参数，使用默认设置运行...")
-    #     default_citations_file = "citations.txt"  # 默认引用文件路径
-    #     default_output_path = os.getcwd()        # 默认输出路径
-    #     main(default_citations_file, default_output_path)
+    #     # 如果没有提供 citations_file，显示帮助信息并退出
+    #     print("Error: --citations_file (-c) is required.")
+    #     print("------------------------------------------\n")
+    #
+    #     parser.print_help()
+    #     sys.exit(1)
+
+    args = parser.parse_args()
+
+    if args.citations_file:
+        # 如果命令行传递参数，使用参数运行
+        main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
+    else:
+        # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
+        print("未检测到命令行参数，使用默认设置运行...")
+        default_citations_file = "citations.txt"  # 默认引用文件路径
+        default_output_path = os.getcwd()        # 默认输出路径
+        main(default_citations_file, default_output_path)

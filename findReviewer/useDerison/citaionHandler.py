@@ -12,7 +12,6 @@ def process_file(input_file, output_file):
     content = content.replace('\n', '')
 
     # 在每个 "[数字]" 前面添加换行符
-    import re
     content = re.sub(r'(\[\d+\])', r'\n\1', content)
 
     # 写入到输出文件
@@ -33,7 +32,7 @@ def clean_references(input_file, output_file=None):
         # 如果没有提供 output_file，默认覆盖 input_file
         if output_file is None:
             output_file = input_file
-        clean_references(input_file, output_file)
+        process_file(input_file, output_file)
         # 从文件读取原始内容
         with open(input_file, "r", encoding="utf-8") as file:
             raw_references = file.readlines()

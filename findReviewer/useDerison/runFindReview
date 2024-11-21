@@ -8,7 +8,7 @@ function show_help() {
   echo "  -c, --citations_file    Path to the citations text file containing one citation per line."
   echo "  -o, --output_path       Path to the output directory (default: current working directory)."
   echo "  -f, --output_file       Name of the output Excel file (default: output_<current_time>.xlsx)."
-  echo "  -s, --sleep_time        Sleep time in seconds between requests (default: 5 seconds)."
+  echo "  -s, --sleep_time        Sleep time in milliseconds seconds between requests (default: 500 milliseconds seconds （0.5s)."
   echo "  -m, --max_reviewers     Set the max reviewers to find (default: 12)."
   echo "  -h, --help              Show this help message and exit."
 }

@@ -10,6 +10,17 @@
 ## 执行脚本
 
 
+```shell
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+
+```
+然后等一会运行起来后， 执行命令，要不然浏览器没启动，脚本就执行了，会报错的。
+
+### 后续优化
+1. bug： excel 去重功能有bug
+2. 优化： 
+   1. db增加email列，
+   2. 自动访问主页，找到email
 
 
 
@@ -42,10 +53,7 @@
 
 在mac上启动浏览器的命令是：
 
-```shell
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
 
-```
 
 然后在脚本中指定：
 
