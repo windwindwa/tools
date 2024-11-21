@@ -464,6 +464,8 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=5, max_r
             print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
             print(">>> 目标人数达到，处理完成，程序结束！")
             break
+        else:
+            max_reviewers -= 1
     print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
