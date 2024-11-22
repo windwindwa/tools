@@ -226,7 +226,8 @@ def filter_professors(data):
         position = profile_info.get('position', '').lower()
 
         # 检查职位中是否包含目标关键词
-        if 'assistant professor' in position or 'associate professor'  in position or 'postdoctoral' in position:
+        # if 'assistant professor' in position or 'associate professor'  in position or 'postdoctoral' in position:
+        if 'assistant professor' in position or 'postdoctoral' in position:
             # 如果匹配成功，将整个数据项添加到结果列表中
             filtered_list.append(item)
 
@@ -429,7 +430,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=500, max
     file_path = output_path or os.getcwd()
     file_name = output_file or f"output_{current_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
     print(f"当前时间: {current_time}, 新建excel文件在: {file_path}/{file_name}")
-    ensure_excel_file_with_headers(output_path, output_file)
+    ensure_excel_file_with_headers(output_path, file_name)
 
     # 初始化 Chromium 和验证码处理器
     print(">>> 初始化 Chromium 和验证码处理器...")
