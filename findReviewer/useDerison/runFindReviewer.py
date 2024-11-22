@@ -95,7 +95,7 @@ def ensure_excel_file_with_headers(file_path, file_name):
         file_name (str): Excel 文件的文件名，可以不包括后缀。
     """
     # 定义所需的标题
-    required_columns = ["Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
+    required_columns = ["googlescholar_id","Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
 
     # 如果文件名不包括后缀，自动添加 .xlsx
     if not file_name.endswith('.xlsx'):
@@ -150,7 +150,7 @@ def append_to_excel(target_result, file_path, file_name):
         ensure_excel_file_with_headers(file_path, file_name)
 
     # 定义标准的列标题
-    required_columns = ["Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
+    required_columns = ["googlescholar_id","Name", "Affiliation", "Email", "Choice Reason", "Google Scholar Home Page"]
 
     # 读取现有的 Excel 文件
     try:
@@ -166,11 +166,13 @@ def append_to_excel(target_result, file_path, file_name):
     # 准备要追加的新数据
     new_data = []
     for item in target_result:
+        googlescholar_id = item.get('googlescholar_id', '')
         name = item.get('profile_info', {}).get('full_name', '')
         affiliation = item.get('profile_info', {}).get('affiliation', '')
         choice_reason = item.get('profile_info', {}).get('position', '')
         href = item.get('href', '')
         new_data.append({
+            "googlescholar_id": googlescholar_id,
             "Name": name,
             "Affiliation": affiliation,
             "Email": "",
@@ -476,6 +478,8 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=500, max
             author_info_from_database = fetch_scholar_data(author['googlescholar_id'])
             if author_info_from_database['googlescholar_id'] == author['googlescholar_id']:
                 print(f">>> 从数据库中提取到作者信息...")
+                author_url = google_scholar_author_url_prefix + author['href']
+                author_info_from_database['href'] = author_url
                 full_result[author_idx - 1]['profile_info'] = author_info_from_database
                 continue
             else:
