@@ -513,14 +513,14 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
             # 保存到 Excel 文件
             print(f">>> 将结果保存到 Excel 文件: {file_name}")
             append_to_excel(field_target_authors, file_path, file_name)
-            if max_reviewers == 0:
+            filter_reviewer =  len(read_unique_names_from_excel(file_path, file_name))
+            if max_reviewers < filter_reviewer :
                 print(f"当前查看到第 {idx} 条引用，程序结束！")
                 print(f"已经找到{len(field_target_authors)} 位符合条件的作者，程序结束！")
                 # print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_name)}")
                 print(">>> 目标人数达到，处理完成，程序结束！")
                 break
-            else:
-                max_reviewers -= 1
+
 
 
     print(f"执行学校过滤...")
