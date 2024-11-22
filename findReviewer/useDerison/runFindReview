@@ -5,12 +5,13 @@ function show_help() {
   echo "Usage: $0 [options]"
   echo ""
   echo "Options:"
-  echo "  -c, --citations_file    Path to the citations text file containing one citation per line."
-  echo "  -o, --output_path       Path to the output directory (default: current working directory)."
-  echo "  -f, --output_file       Name of the output Excel file (default: output_<current_time>.xlsx)."
-  echo "  -s, --sleep_time        Sleep time in milliseconds seconds between requests (default: 500 milliseconds seconds （0.5s)."
-  echo "  -m, --max_reviewers     Set the max reviewers to find (default: 12)."
-  echo "  -h, --help              Show this help message and exit."
+  echo "  -c, --citations_file        Path to the citations text file containing one citation per line."
+  echo "  -o, --output_path           Path to the output directory (default: current working directory)."
+  echo "  -f, --output_file           Name of the output Excel file (default: output_<current_time>.xlsx)."
+  echo "  -s, --sleep_time            Sleep time in milliseconds seconds between requests (default: 500 milliseconds seconds （0.5s)."
+  echo "  -m, --max_reviewers         Set the max reviewers to find (default: 12)."
+  echo "  -f, --filter_school_file    Path to the filter school file text file containing one school per line with full name, short name."
+  echo "  -h, --help                  Show this help message and exit."
 }
 
 # 检查是否传入参数
@@ -25,6 +26,7 @@ OUTPUT_PATH=""
 OUTPUT_FILE=""
 SLEEP_TIME=5
 MAX_REVIEWERS=12
+FILTER_SCHOOL_FILE=""
 
 # 解析命令行参数
 while [[ "$#" -gt 0 ]]; do
@@ -34,6 +36,7 @@ while [[ "$#" -gt 0 ]]; do
     -f|--output_file) OUTPUT_FILE="$2"; shift ;;
     -s|--sleep_time) SLEEP_TIME="$2"; shift ;;
     -m|--max_reviewers) MAX_REVIEWERS="$2"; shift ;;
+    -fs|--filter_school_file) FILTER_SCHOOL_FILE="$2"; shift ;;
     -h|--help) show_help; exit 0 ;;
     *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
   esac
@@ -53,4 +56,5 @@ fi
   --output_path "$OUTPUT_PATH" \
   --output_file "$OUTPUT_FILE" \
   --sleep_time "$SLEEP_TIME" \
-  --max_reviewers "$MAX_REVIEWERS"
+  --max_reviewers "$MAX_REVIEWERS" \
+  --filter_school_file "$FILTER_SCHOOL_FILE"

@@ -1,0 +1,52 @@
+Massachusetts Institute of Technology,MIT
+Imperial College London,ICL
+University of Oxford,Oxford
+Harvard University,Harvard
+University of Cambridge,Cambridge
+Stanford University,Stanford
+ETH Zurich,ETH
+National University of Singapore,NUS
+UCL (University College London),UCL
+California Institute of Technology,Caltech
+University of Pennsylvania,Penn
+University of California, Berkeley,UCB
+The University of Melbourne,Melbourne
+Peking University,PKU
+Nanyang Technological University,NTU
+Cornell University,Cornell
+The University of Hong Kong,HKU
+The University of Sydney,Sydney
+The University of New South Wales,UNSW
+Tsinghua University,Tsinghua
+University of Chicago,Chicago
+Princeton University,Princeton
+Yale University,Yale
+Université PSL,PSL
+University of Toronto,Toronto
+EPFL – École polytechnique fédérale de Lausanne,EPFL
+The University of Edinburgh,Edinburgh
+Technical University of Munich,TUM
+McGill University,McGill
+Australian National University,ANU
+Seoul National University,SNU
+Johns Hopkins University,JHU
+The University of Tokyo,Tokyo
+Columbia University,Columbia
+The University of Manchester,Manchester
+The Chinese University of Hong Kong,CUHK
+Monash University,Monash
+University of British Columbia,UBC
+Fudan University,Fudan
+King's College London,KCL
+The University of Queensland,UQ
+University of California, Los Angeles,UCLA
+New York University,NYU
+University of Michigan-Ann Arbor,Michigan
+Shanghai Jiao Tong University,SJTU
+Institut Polytechnique de Paris,IPP
+The Hong Kong University of Science and Technology,HKUST
+Zhejiang University,ZJU
+Delft University of Technology,Delft
+Kyoto University,Kyoto
+Northwestern University,Northwestern
+The London School of Economics and Political Science,LSE

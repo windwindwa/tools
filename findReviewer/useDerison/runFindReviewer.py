@@ -19,6 +19,7 @@ from captchaHandler import CaptchaHandler
 from citaionHandler import clean_references
 from databaseHandler import initialize_database, insert_data,fetch_scholar_data
 from pyfiglet import figlet_format
+from filterHandler import write_results_to_excel,filter_affiliation_by_school,read_school_file,read_excel_file
 
 
 def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
@@ -401,12 +402,13 @@ def scholar_search(tab, query: str):
     return tab
 
 
-def main(citations_file, output_path=None, output_file=None, sleep_time=500, max_reviewers=12):
+def main(citations_file,filter_school_file, output_path=None, output_file=None, sleep_time=500, max_reviewers=12):
     """
     主函数：从引用文件中读取引用列表，使用 Google Scholar 进行搜索，提取作者信息并保存到 Excel 文件。
 
     参数：
         citations_file (str): 引用文件路径，文件中每行包含一个引用。
+        filter_school_file (str): 学校过滤文件路径，文件中每行包含一个学校全称和简称。
         output_path (str): 输出目录路径，默认是当前工作目录。
         output_file (str): 输出 Excel 文件名，默认格式为 output_<时间戳>.xlsx。
         sleep_time (int): 每次请求之间的等待时间（单位：毫秒秒），默认值为 500 毫秒 （0.5s）。
@@ -432,7 +434,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=500, max
     file_path = output_path or os.getcwd()
     file_name = output_file or f"output_{current_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
     print(f"当前时间: {current_time}, 新建excel文件在: {file_path}/{file_name}")
-    ensure_excel_file_with_headers(output_path, file_name)
+    ensure_excel_file_with_headers(file_path, file_name)
 
     # 初始化 Chromium 和验证码处理器
     print(">>> 初始化 Chromium 和验证码处理器...")
@@ -500,7 +502,7 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=500, max
         print(">>> 筛选符合条件的作者...")
         target_authors = filter_professors(full_result)
         field_target_authors = target_authors
-        if len(target_authors) != 0:
+        if len(target_authors) > 0:
             print(f"找到符合的作者，执行去重操作...")
             current_excel_names = read_unique_names_from_excel(file_path, file_name)
             for target_author in target_authors:
@@ -514,11 +516,16 @@ def main(citations_file, output_path=None, output_file=None, sleep_time=500, max
             if max_reviewers == 0:
                 print(f"当前查看到第 {idx} 条引用，程序结束！")
                 print(f"已经找到{len(field_target_authors)} 位符合条件的作者，程序结束！")
-                print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
+                # print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_name)}")
                 print(">>> 目标人数达到，处理完成，程序结束！")
                 break
             else:
                 max_reviewers -= 1
+
+
+    print(f"执行学校过滤...")
+    filtered_results, excluded_results = filter_affiliation_by_school(read_excel_file(file_path, file_name), read_school_file(filter_school_file))
+    write_results_to_excel(file_path,file_name,filtered_results,excluded_results)
     print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
@@ -529,6 +536,11 @@ if __name__ == "__main__":
         '--citations_file', '-c',
         type=str,
         help="Path to the citations text file containing one citation per line."
+    )
+    parser.add_argument(
+        '--filter_school_file', '-fs',
+        type=str,
+        help="Path to the filter school file text file containing one school  per line which is  full name , short name."
     )
     parser.add_argument(
         '--output_path', '-o',
@@ -577,5 +589,6 @@ if __name__ == "__main__":
         # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
         print("未检测到命令行参数，使用默认设置运行...")
         default_citations_file = "citations.txt"  # 默认引用文件路径
+        default_school_file = "qs_top_50_universities.txt"  # 默认学校过滤文件路径
         default_output_path = os.getcwd()        # 默认输出路径
-        main(default_citations_file, default_output_path)
+        main(default_citations_file,default_school_file, default_output_path)
