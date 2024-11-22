@@ -57,15 +57,13 @@ def filter_affiliation_by_school(data, school_dict):
     # 提取学校全称和简称列表
     full_names = set(school_dict.get("full_name", []))
     short_names = set(school_dict.get("short_name", []))
-
     # 遍历 data 进行筛选
     for record in data:
         affiliation = record.get("Affiliation", "")
         if any(school in affiliation for school in full_names | short_names):
-            filtered_results.append(record)
-        else:
             excluded_results.append(record)
-
+        else:
+            filtered_results.append(record)
     return filtered_results, excluded_results
 
 
