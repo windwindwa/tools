@@ -4,6 +4,7 @@
 # @Site    :
 # @File    : scholar_search.py
 # @Software: PyCharm
+import shutil
 
 import json
 import sys
@@ -22,9 +23,9 @@ from pyfiglet import figlet_format
 from filterHandler import write_results_to_excel,filter_affiliation_by_school,read_school_file,read_excel_file
 
 
-def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
+def read_unique_googlescholar_id_from_excel(file_path, file_name, sheet_name=None):
     """
-    从目标 Excel 文件中读取 `Name` 列的所有数据并去重。
+    从目标 Excel 文件中读取 'googlescholar_id' 列的所有数据并去重。
 
     参数:
         file_path (str): 文件夹路径。
@@ -32,7 +33,7 @@ def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
         sheet_name (int or str): 要读取的工作表名或索引，默认为第一个工作表。
 
     返回:
-        list: 去重后的 Name 列数据列表。
+        list: 去重后的 'googlescholar_id' 列数据列表。
     """
     try:
         # 如果文件名没有后缀，自动添加 .xlsx
@@ -44,16 +45,17 @@ def read_unique_names_from_excel(file_path, file_name, sheet_name=0):
 
         # 读取 Excel 文件
         df = pd.read_excel(full_path, sheet_name=sheet_name)
+        unique_names =[]
 
-        # 检查是否存在 `Name` 列
-        if 'Name' not in df.columns:
-            raise ValueError("Excel 文件中未找到 `Name` 列。")
+        for sheet in df:
+            # 检查是否存在 `Name` 列
+            if 'googlescholar_id' not in df[sheet].columns:
+                raise ValueError("Excel 文件中未找到 `googlescholar_id` 列。")
 
-        # 获取 `Name` 列并去重
-        unique_names = df['Name'].dropna().unique()
+            unique_names.extend(df[sheet]['googlescholar_id'].dropna().unique())
 
         # 转为列表返回
-        return unique_names.tolist()
+        return unique_names
     except Exception as e:
         print(f"读取 Excel 文件时发生错误: {e}")
         return []
@@ -311,6 +313,9 @@ def extract_profile_info(html_str):
 
     return profile_info
 
+
+
+
 def extract_first_gs_ri_names_ids_hrefs(html_str):
     """
     从提供的HTML字符串中提取第一个 class="gs_ri" 块中的第一个 class="gs_a gs_fma_s" 内的所有name, href 和 Google Scholar ID。
@@ -394,6 +399,7 @@ def scholar_search(tab, query: str):
         input.dispatchEvent(new Event("input"));  // 触发 input 事件
         input.dispatchEvent(new Event("change"));  // 触发 change 事件
     '''
+    tab._wait_loaded()
     tab.run_js(js_script)
 
     # 定位搜索按钮并点击
@@ -402,7 +408,7 @@ def scholar_search(tab, query: str):
     return tab
 
 
-def main(citations_file,filter_school_file, output_path=None, output_file=None, sleep_time=500, max_reviewers=12):
+def main(citations_file,filter_school_file, output_path=None, output_file=None, sleep_time=1000, max_reviewers=12):
     """
     主函数：从引用文件中读取引用列表，使用 Google Scholar 进行搜索，提取作者信息并保存到 Excel 文件。
 
@@ -439,16 +445,24 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
     # 初始化 Chromium 和验证码处理器
     print(">>> 初始化 Chromium 和验证码处理器...")
     chromium = Chromium()
-    print(chromium)
+    # print(chromium)
     captcha_handler = CaptchaHandler(chromium)
+    # copy the citation to temp file
+
+    destination_file = "temp_citaions.txt"
+    # 复制文件到临时文件
+    shutil.copy(citations_file, destination_file)
+
+    print(f"文件已复制到 {os.path.abspath(destination_file)}")
+
 
     # 清理引用文件
-    print(f">>> 清理引用文件: {citations_file}")
-    clean_references(citations_file)
+    print(f">>> 清理引用文件: {destination_file}")
+    clean_references(destination_file)
 
     # 读取引用文件
-    print(f">>> 从引用文件 {citations_file} 中加载引用列表...")
-    citations = read_references(citations_file)
+    print(f">>> 从引用文件 {destination_file} 中加载引用列表...")
+    citations = read_references(destination_file)
     print(f"共加载 {len(citations)} 条引用。")
 
     # 遍历引用并处理
@@ -481,7 +495,7 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
             if author_info_from_database['googlescholar_id'] == author['googlescholar_id']:
                 print(f">>> 从数据库中提取到作者信息...")
                 author_url = google_scholar_author_url_prefix + author['href']
-                author_info_from_database['href'] = author_url
+                full_result[author_idx - 1]['href'] = author_url
                 full_result[author_idx - 1]['profile_info'] = author_info_from_database
                 continue
             else:
@@ -504,16 +518,17 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
         field_target_authors = target_authors
         if len(target_authors) > 0:
             print(f"找到符合的作者，执行去重操作...")
-            current_excel_names = read_unique_names_from_excel(file_path, file_name)
+            # sheet 1
+            current_excel_names = read_unique_googlescholar_id_from_excel(file_path, file_name)
+            # current_excel_names.append(excluded_excel_names)
             for target_author in target_authors:
-                if target_author['name'] in current_excel_names:
+                if target_author['googlescholar_id'] in current_excel_names:
                     print(f"发现重复作者: {target_author['name']}，跳过...")
                     field_target_authors.remove(target_author)
-
             # 保存到 Excel 文件
             print(f">>> 将结果保存到 Excel 文件: {file_name}")
             append_to_excel(field_target_authors, file_path, file_name)
-            filter_reviewer =  len(read_unique_names_from_excel(file_path, file_name))
+            filter_reviewer =  len(read_unique_googlescholar_id_from_excel(file_path, file_name))
             if max_reviewers < filter_reviewer :
                 print(f"当前查看到第 {idx} 条引用，程序结束！")
                 print(f"已经找到{len(field_target_authors)} 位符合条件的作者，程序结束！")
@@ -526,7 +541,7 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
     print(f"执行学校过滤...")
     filtered_results, excluded_results = filter_affiliation_by_school(read_excel_file(file_path, file_name), read_school_file(filter_school_file))
     write_results_to_excel(file_path,file_name,filtered_results,excluded_results)
-    print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
+    # print(f">>> 任务完成---》已经写入到excel文件： {os.path.abspath(path=file_path)}")
     print(">>> 所有引用处理完成，程序结束！")
 
 
@@ -556,7 +571,7 @@ if __name__ == "__main__":
         '--sleep_time', '-s',
         type=int,
         default=500,
-        help="Sleep time in milliseconds seconds between requests (default: 500 milliseconds seconds （0.5s))."
+        help="Sleep time in milliseconds seconds between requests (default: 1000 milliseconds seconds （1s))."
     )
     parser.add_argument(
         '--max_reviewers', '-m',
@@ -584,7 +599,7 @@ if __name__ == "__main__":
 
     if args.citations_file:
         # 如果命令行传递参数，使用参数运行
-        main(args.citations_file, args.output_path, args.output_file, args.sleep_time)
+        main(args.citations_file,args.filter_school_file, args.output_path, args.output_file, args.sleep_time)
     else:
         # 如果没有命令行参数，使用默认路径和文件名，适合直接在 PyCharm 点击运行
         print("未检测到命令行参数，使用默认设置运行...")
