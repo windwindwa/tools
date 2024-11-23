@@ -28,7 +28,7 @@ class CaptchaHandler:
         :return: 如果找到关键字返回 True，否则返回 False
         """
 
-        keyword = "请进行人机身份验证"
+        keyword = "进行人机身份验证"
         return keyword in html_content
     def check_captcha(self) -> bool:
         """检查页面是否包含验证码
