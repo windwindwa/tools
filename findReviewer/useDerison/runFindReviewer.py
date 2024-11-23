@@ -475,9 +475,11 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
         # time.sleep(sleep_time)
         # Google Scholar 搜索
         print(">>> 在 Google Scholar 中搜索引用...")
+        captcha_handler.handle_captcha()
         tab = scholar_search(tab, citation)
         # tab.wait(sleep_time)
         captcha_handler.handle_captcha()
+
 
         # 提取作者和引用信息
         print(">>> 提取搜索结果中的作者和引用信息...")
@@ -505,7 +507,7 @@ def main(citations_file,filter_school_file, output_path=None, output_file=None, 
                 author['href'] = author_url
                 tab.get(author_url)
                 captcha_handler.handle_captcha()
-                tab.wait(sleep_time/1000)
+                tab.wait(sleep_time/1000, sleep_time/500)
                 print(f">>> 提取作者信息...")
                 profile_info = extract_profile_info(tab.html)
                 full_result[author_idx-1]['profile_info'] = profile_info

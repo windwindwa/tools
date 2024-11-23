@@ -29,7 +29,8 @@ class CaptchaHandler:
         """
 
         keyword = "进行人机身份验证"
-        return keyword in html_content
+        other_keyword = "我们的系统检测到您的计算机网络中存在异常流量"
+        return bool(keyword in html_content) or bool(other_keyword in html_content)
     def check_captcha(self) -> bool:
         """检查页面是否包含验证码
         """

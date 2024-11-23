@@ -29,6 +29,7 @@ def initialize_database(db_file=DB_FILE):
         CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
             googlescholar_id TEXT PRIMARY KEY,
             name TEXT,
+            email TEXT,
             href TEXT,
             full_name TEXT,
             position TEXT,
@@ -56,6 +57,7 @@ def insert_data(entry, db_file=DB_FILE):
 
     googlescholar_id = entry.get('googlescholar_id')
     name = entry.get('name')
+    email = entry.get('email')
     href = entry.get('href')
     full_name = entry.get('profile_info', {}).get('full_name')
     position = entry.get('profile_info', {}).get('position')
@@ -72,11 +74,11 @@ def insert_data(entry, db_file=DB_FILE):
     # Insert or replace into the table
     cursor.execute(f"""
         INSERT OR REPLACE INTO {TABLE_NAME} (
-            googlescholar_id, name, href, full_name, position,
+            googlescholar_id, name, email, href, full_name, position,
             affiliation, affiliation_link, homepage, keywords
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?,?, ?, ?, ?, ?, ?, ?)
     """, (
-        googlescholar_id, name, href, full_name, position,
+        googlescholar_id, name,email, href, full_name, position,
         affiliation, affiliation_link, homepage, keywords
     ))
 
@@ -104,7 +106,7 @@ def fetch_scholar_data(googlescholar_id, db_file=DB_FILE):
     # Query the database
     cursor.execute(f"""
         SELECT googlescholar_id, name, href, full_name, position,
-               affiliation, affiliation_link, homepage, keywords
+               affiliation, affiliation_link, homepage, keywords,email
         FROM {TABLE_NAME}
         WHERE googlescholar_id = ?
     """, (googlescholar_id,))
@@ -116,6 +118,7 @@ def fetch_scholar_data(googlescholar_id, db_file=DB_FILE):
         return {
             'googlescholar_id': '',
             'href': '',
+            'email': '',
             'name': '',
             'full_name': '',
             'position': '',
@@ -130,6 +133,7 @@ def fetch_scholar_data(googlescholar_id, db_file=DB_FILE):
         'googlescholar_id': row[0] or '',
         'href': row[2] or '',
         'name': row[1] or '',
+        'email': row[9] or '',
         'full_name': row[3] or '',
         'position': row[4] or '',
         'affiliation': row[5] or '',
