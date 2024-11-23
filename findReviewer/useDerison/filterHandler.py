@@ -106,24 +106,24 @@ def read_excel_file(path, filename):
         file_path = Path(path) / filename
 
         # 读取Excel文件
-        df = pd.read_excel(file_path)
-
+        df = pd.read_excel(file_path,sheet_name=None)
+        result = []
         # 检查文件是否为空
-        if df.empty:
+        if not df:
             print("Excel文件为空")
             return []
-
-        # 必要列校验
-        required_columns = [
-            "googlescholar_id", "Name", "Affiliation",
-            "Email", "Choice Reason", "Google Scholar Home Page"
-        ]
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            raise ValueError(f"缺少必要的列: {', '.join(missing_columns)}")
+        for sheet in df:
+            # 必要列校验
+            required_columns = [
+                "googlescholar_id", "Name", "Affiliation",
+                "Email", "Choice Reason", "Google Scholar Home Page"
+            ]
+            missing_columns = [col for col in required_columns if col not in df[sheet].columns]
+            if missing_columns:
+                raise ValueError(f"缺少必要的列: {', '.join(missing_columns)}")
 
         # 转换为字典列表
-        result = df.to_dict(orient="records")
+            result = df[sheet].to_dict(orient="records")
     except FileNotFoundError:
         print(f"文件路径无效: {path}/{filename}")
     except Exception as e:
