@@ -74,7 +74,7 @@ def main():
     parser.add_argument("--db_path", "-d" ,required=True, type=str, help="SQLite 数据库文件路径")
     args = parser.parse_args()
     # args.excel_path = '/Users/lzg/cli_soft/0_start_script/T-IFS-18807-2024_Proof_hi.xlsx'
-    # args.db_path = '/Users/lzg/0_lzgData/2_Personal/220_othersTools/tools/findReviewer/useDerison/scholar_data.db'
+    # args.db_path = '/Users/lzg/0_lzgData/2_Personal/220_othersTools/tools/findReviewer/useDerison/scholar_data1.db'
     excel_path = args.excel_path
     db_path = args.db_path
 

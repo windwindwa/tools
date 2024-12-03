@@ -13,9 +13,7 @@ import time
 
 from DrissionPage import Chromium
 from datetime import datetime
-from bs4 import BeautifulSoup
 import os
-import pandas as pd
 from captchaHandler import CaptchaHandler
 from citaionHandler import clean_references,read_references
 from databaseHandler import initialize_database, insert_data,fetch_scholar_data
@@ -23,7 +21,7 @@ from filterHandler import write_results_to_excel,filter_affiliation_by_school,re
 from pageHandler import scholar_search,extract_authors_info,extract_profile_info,extract_first_gs_ri_names_ids_hrefs
 from logoHandler import print_logo
 from excelHandler import read_unique_googlescholar_id_from_excel,ensure_excel_file_with_headers,append_to_excel
-from dataHander import filter_professors
+from dataHandler import filter_professors
 
 def main(citations_file,filter_school_file, output_path=None, output_file=None, sleep_time=1000, max_reviewers=12):
     """

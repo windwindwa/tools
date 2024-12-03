@@ -4,8 +4,26 @@
 # @Time    : 12/3/24 13:19
 # @Author  : lzg
 # @Site    : 
-# @File    : dataHander.py
+# @File    : dataHandler.py
 # @Software: PyCharm
+
+
+from typing import List
+from dataStructure import FullAuthorInfo
+
+def filter_authors_by_position(authors: List[FullAuthorInfo]) -> List[FullAuthorInfo]:
+    """
+    过滤作者列表，返回职位包含 'assistant professor' 或 'postdoctoral' 的作者。
+
+    :param authors: 包含 FullAuthorInfo 数据的列表
+    :return: 满足条件的 FullAuthorInfo 数据的列表
+    """
+    filtered_authors = [
+        author for author in authors
+        if 'assistant professor' in author.get('position', '').lower() or
+           'postdoctoral' in author.get('position', '').lower()
+    ]
+    return filtered_authors
 
 
 # 筛选函数

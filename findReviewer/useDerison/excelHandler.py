@@ -66,7 +66,7 @@ def append_to_excel(target_result, file_path, file_name):
 
     # 构建完整的文件路径
     full_path = os.path.join(file_path, file_name)
-
+    print(os.path.abspath(full_path))
     # 如果文件不存在，则调用 ensure_excel_file_with_headers 创建文件
     if not os.path.exists(full_path):
         ensure_excel_file_with_headers(file_path, file_name)
@@ -89,15 +89,16 @@ def append_to_excel(target_result, file_path, file_name):
     new_data = []
     for item in target_result:
         googlescholar_id = item.get('googlescholar_id', '')
-        name = item.get('profile_info', {}).get('full_name', '')
-        affiliation = item.get('profile_info', {}).get('affiliation', '')
-        choice_reason = item.get('profile_info', {}).get('position', '')
+        name = item.get('profile_info', {}).get('full_name', '') or item.get('name', '')
+        affiliation = item.get('profile_info', {}).get('affiliation', '') or item.get('affiliation', '')
+        choice_reason = item.get('profile_info', {}).get('position', '') or item.get('position', '')
+        email = item.get('email', '') or ''
         href = item.get('href', '')
         new_data.append({
             "googlescholar_id": googlescholar_id,
             "Name": name,
             "Affiliation": affiliation,
-            "Email": "",
+            "Email": email,
             "Choice Reason": choice_reason,
             "Google Scholar Home Page": href,
         })

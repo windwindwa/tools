@@ -8,7 +8,77 @@
 # @Software: PyCharm
 
 import json
+import time
+
 from bs4 import BeautifulSoup
+
+from bs4 import BeautifulSoup
+from typing import List
+# from findReviewer.useDerison.dataStructure import FullAuthorInfo, Homepage
+from dataStructure import FullAuthorInfo, Homepage
+def extract_author_info_from_key_page(html_str: str) -> List[FullAuthorInfo]:
+    """
+    从 HTML 字符串中提取作者信息并组织到 FullAuthorInfo 数据结构中。
+
+    参数:
+    html_str (str): 输入的 HTML 字符串。
+
+    返回:
+    List[FullAuthorInfo]: 包含作者信息的列表。
+    """
+    soup = BeautifulSoup(html_str, 'html.parser')
+    authors = []
+
+    # 找到所有符合条件的 <div class="gs_ai gs_scl gs_ai_chpr">
+    author_divs = soup.find_all('div', class_='gs_ai gs_scl gs_ai_chpr')
+
+    for div in author_divs:
+        # 获取 Google Scholar ID 和个人链接
+        profile_link = div.find('a', class_='gs_ai_pho')
+        href = profile_link['href'] if profile_link else ''
+        googlescholar_id = href.split('user=')[-1] if 'user=' in href else ''
+
+        # 获取作者姓名
+        name_div = div.find('h3', class_='gs_ai_name')
+        name_link = name_div.find('a') if name_div else None
+        name = name_link.text if name_link else ''
+        full_name = name  # 假设全名和姓名相同
+
+        # 获取职位和单位
+        position = div.find('div', class_='gs_ai_aff').text if div.find('div', class_='gs_ai_aff') else ''
+        affiliation = div.find('div', class_='gs_ai_aff').text if div.find('div', class_='gs_ai_aff') else ''
+        affiliation_link = ''  # 如果有链接可以在此添加提取逻辑
+
+        # 获取电子邮件验证信息
+        # email_div = div.find('div', class_='gs_ai_eml')
+        # email = email_div.text.replace('在 ', '').replace(' 的电子邮件经过验证', '') if email_div else ''
+
+        # 获取关键词
+        keywords_div = div.find('div', class_='gs_ai_int')
+        keywords = [a.text for a in keywords_div.find_all('a')] if keywords_div else []
+
+        # 获取主页信息
+        homepage = Homepage(href=href, text=name)
+
+        # 构造 FullAuthorInfo
+        author_info = FullAuthorInfo(
+            googlescholar_id=googlescholar_id,
+            href=href,
+            # email=email,
+            name=name,
+            full_name=full_name,
+            position=position,
+            affiliation=affiliation,
+            affiliation_link=affiliation_link,
+            homepage=homepage,
+            keywords=keywords
+        )
+
+        authors.append(author_info)
+
+    return authors
+
+
 
 def extract_first_gs_ri_names_ids_hrefs(html_str):
     """
@@ -49,6 +119,33 @@ def extract_first_gs_ri_names_ids_hrefs(html_str):
 
     return result
 
+
+def click_next_page_buttom(tab):
+    """
+    自动处理分页逻辑，点击“下一页”按钮并处理页面数据。
+    :param tab: DrissionPage 对象
+    :return: bool: 是否成功点击“下一页”按钮
+    """
+    # 等待页面加载完成
+    tab._wait_loaded()
+
+    # 检查是否存在“下一页”按钮
+    # next_page_button = tab.ele('.gsc_pgn_pnx')  # 定位“下一页”按钮
+    next_page_button = 'gsc_pgn_pnx' in tab.html
+    if next_page_button:
+        print("发现下一页按钮，点击...")
+
+        # 通过 JavaScript 模拟点击事件
+        js_script = 'document.querySelector(".gsc_pgn_pnx").click();'
+        # time.sleep(2)
+        # print("等待2s，之后点击下一页按钮")
+        tab.run_js(js_script,timeout=5)
+        return True
+        # 或直接点击按钮（两者选其一）
+        # next_page_button.click()
+    else:
+        print("没有更多页面了。")
+        return False
 
 
 def scholar_search(tab, query: str):

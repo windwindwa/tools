@@ -59,17 +59,19 @@ def insert_data(entry, db_file=DB_FILE):
     name = entry.get('name')
     email = entry.get('email')
     href = entry.get('href')
-    full_name = entry.get('profile_info', {}).get('full_name')
-    position = entry.get('profile_info', {}).get('position')
-    affiliation = entry.get('profile_info', {}).get('affiliation')
-    affiliation_link = entry.get('profile_info', {}).get('affiliation_link')
+    full_name = entry.get('profile_info', {}).get('full_name') or entry.get('full_name')
+    position = entry.get('profile_info', {}).get('position') or entry.get('position')
+    affiliation = entry.get('profile_info', {}).get('affiliation') or entry.get('affiliation')
+    affiliation_link = entry.get('profile_info', {}).get('affiliation_link') or entry.get('affiliation_link')
     try:
-        homepage = entry.get('profile_info', {}).get('homepage', {}).get('href')
+        homepage = entry.get('profile_info', {}).get('homepage', {}).get('href') or entry.get('homepage', {}).get('href')
     except:
         homepage = ''
     keywords = ", ".join(
-        keyword['name'].lower().replace(" ", "_") for keyword in entry.get('profile_info', {}).get('keywords', [])
-    )
+        keyword.lower().replace(" ", "_")
+        for keyword in (
+                entry.get('profile_info', {}).get('keywords', []) or entry.get('keywords', [])
+        ))
 
     # Insert or replace into the table
     cursor.execute(f"""
@@ -99,6 +101,7 @@ def fetch_scholar_data(googlescholar_id, db_file=DB_FILE):
 
     Returns:
     - A dictionary in the desired format. or return a default dictionary if no data is found which value is ''.
+     return same as FullAuthorInfo structure
     """
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
