@@ -50,6 +50,24 @@ def clean_references(input_file, output_file=None):
         print(f"处理文件时出错: {e}")
 
 
+def read_references(file_path):
+    """
+    读取文件中的每行内容，并将其存储为列表返回。
+
+    :param file_path: str, 文件路径
+    :return: list, 每行作为一个列表元素
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            references = [line.strip() for line in file if line.strip()]
+        return references
+    except FileNotFoundError:
+        print(f"错误: 文件 '{os.path.abspath(file_path)}' 未找到！")
+        return []
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return []
+
 # 示例使用
 # input_path = "/mnt/data/raw_references.txt"
 # clean_references(input_path)  # 默认覆盖输入文件
